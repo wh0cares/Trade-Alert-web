@@ -5,7 +5,7 @@
 -- Dumped from database version 9.6rc1
 -- Dumped by pg_dump version 9.6rc1
 
--- Started on 2016-09-11 18:21:11
+-- Started on 2016-09-13 17:10:57
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -40,24 +40,24 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- TOC entry 186 (class 1259 OID 16422)
+-- TOC entry 186 (class 1259 OID 16431)
 -- Name: stock; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE stock (
     id integer NOT NULL,
-    date text,
+    date text[],
     name text,
     index text,
     symbol text,
-    volume integer
+    volume integer[]
 );
 
 
 ALTER TABLE stock OWNER TO postgres;
 
 --
--- TOC entry 185 (class 1259 OID 16420)
+-- TOC entry 185 (class 1259 OID 16429)
 -- Name: stock_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -81,7 +81,7 @@ ALTER SEQUENCE stock_id_seq OWNED BY stock.id;
 
 
 --
--- TOC entry 2002 (class 2604 OID 16425)
+-- TOC entry 2002 (class 2604 OID 16434)
 -- Name: stock id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -89,13 +89,13 @@ ALTER TABLE ONLY stock ALTER COLUMN id SET DEFAULT nextval('stock_id_seq'::regcl
 
 
 --
--- TOC entry 2121 (class 0 OID 16422)
+-- TOC entry 2121 (class 0 OID 16431)
 -- Dependencies: 186
 -- Data for Name: stock; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 
-COPY stock ("ID", day, name, index, symbol, volume) FROM stdin;
+COPY stock (id, date, name, index, symbol, volume) FROM stdin;
 \.
 
 
@@ -105,10 +105,10 @@ COPY stock ("ID", day, name, index, symbol, volume) FROM stdin;
 -- Name: stock_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"stock_ID_seq"', 1, false);
+SELECT pg_catalog.setval('stock_id_seq', 1, true);
 
 
--- Completed on 2016-09-11 18:21:11
+-- Completed on 2016-09-13 17:10:58
 
 --
 -- PostgreSQL database dump complete

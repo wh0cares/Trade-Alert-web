@@ -8,6 +8,9 @@ var pgp = require('pg-promise')(options);
 var connection = 'postgres://postgres:stkadmin@localhost:5432/stocks';
 var db = pgp(connection);
 
+var Xray = require("x-ray");
+var xray = new Xray();
+
 function getAllStocks(req, res, next) {
     db.any('select * from stock ORDER BY id')
         .then(function(data) {
@@ -40,15 +43,11 @@ function getSingleStock(req, res, next) {
 }
 
 function createStock(req, res, next) {
-    var Xray = require("x-ray");
-    var xray = new Xray();
-
     xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', 'title')(function(err, name) {
         name = name.split(':');
         req.body.name = name[0];
-        req.body.volume = parseInt(req.body.volume);
         db.none('insert into stock(date, name, index, symbol, volume)' +
-                'values(${date}, ${name}, ${index}, ${symbol}, ${volume})',
+                'values(${date}::text[], ${name}, ${index}, ${symbol}, ${volume}::integer[])',
                 req.body)
             .then(function() {
                 res.status(200)
@@ -64,19 +63,23 @@ function createStock(req, res, next) {
 }
 
 function updateStock(req, res, next) {
-    db.none('update stock set date=$1, name=$2, index=$3, symbol=$4, volume=$5 where id=$6', [req.body.date, req.body.name, req.body.index,
-            req.body.symbol, parseInt(req.body.volume), parseInt(req.params.id)
-        ])
-        .then(function() {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated stock'
-                });
-        })
-        .catch(function(err) {
-            return next(err);
-        });
+    xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', 'title')(function(err, name) {
+        name = name.split(':');
+        req.body.name = name[0];
+        db.none('update stock set date=$1::text[], name=$2, index=$3, symbol=$4, volume=$5::integer[] where id=$6', [req.body.date, req.body.name, req.body.index,
+                req.body.symbol, req.body.volume, parseInt(req.params.id)
+            ])
+            .then(function() {
+                res.status(200)
+                    .json({
+                        status: 'success',
+                        message: 'Updated stock'
+                    });
+            })
+            .catch(function(err) {
+                return next(err);
+            });
+    });
 }
 
 function removeStock(req, res, next) {
