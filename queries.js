@@ -43,9 +43,32 @@ function getSingleStock(req, res, next) {
 }
 
 function createStock(req, res, next) {
+    var datesArray = []
+    var volumesArray = []
+    xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', '.lm', [{
+        date: ''
+    }])(function(err, data) {
+        for (i = 1; i < 31; i++) {
+            var date = data[i].date;
+            var date = date.replace("\n", '');
+            datesArray.push(date);
+        }
+    });
+    xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', '.rgt.rm', [{
+        volume: ''
+    }])(function(err, data) {
+        for (i = 1; i < 31; i++) {
+            var volume = data[i].volume;
+            var volume = volume.replace("\n", '');
+            var volume = volume.replace(/,/g, '');
+            volumesArray.push(parseInt(volume));
+        }
+    });
     xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', 'title')(function(err, name) {
         name = name.split(':');
         req.body.name = name[0];
+        req.body.date = datesArray;
+        req.body.volume = volumesArray;
         db.none('insert into stock(date, name, index, symbol, volume)' +
                 'values(${date}::text[], ${name}, ${index}, ${symbol}, ${volume}::integer[])',
                 req.body)
@@ -63,9 +86,32 @@ function createStock(req, res, next) {
 }
 
 function updateStock(req, res, next) {
+    var datesArray = []
+    var volumesArray = []
+    xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', '.lm', [{
+        date: ''
+    }])(function(err, data) {
+        for (i = 1; i < 31; i++) {
+            var date = data[i].date;
+            var date = date.replace("\n", '');
+            datesArray.push(date);
+        }
+    });
+    xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', '.rgt.rm', [{
+        volume: ''
+    }])(function(err, data) {
+        for (i = 1; i < 31; i++) {
+            var volume = data[i].volume;
+            var volume = volume.replace("\n", '');
+            var volume = volume.replace(/,/g, '');
+            volumesArray.push(parseInt(volume));
+        }
+    });
     xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', 'title')(function(err, name) {
         name = name.split(':');
         req.body.name = name[0];
+        req.body.date = datesArray;
+        req.body.volume = volumesArray;
         db.none('update stock set date=$1::text[], name=$2, index=$3, symbol=$4, volume=$5::integer[] where id=$6', [req.body.date, req.body.name, req.body.index,
                 req.body.symbol, req.body.volume, parseInt(req.params.id)
             ])
