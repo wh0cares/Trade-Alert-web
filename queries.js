@@ -5,14 +5,14 @@ var options = {
 };
 
 var pgp = require('pg-promise')(options);
-var connection = 'postgres://postgres:stkadmin@localhost:5432/stocks';
+var connection = 'postgres://postgres:stkadmin@localhost:5432/project-stk';
 var db = pgp(connection);
 
 var Xray = require("x-ray");
 var xray = new Xray();
 
 function getAllStocks(req, res, next) {
-    db.any('select * from stock ORDER BY id')
+    db.any('select * from stocks ORDER BY id')
         .then(function(data) {
             res.status(200)
                 .json({
@@ -28,7 +28,7 @@ function getAllStocks(req, res, next) {
 
 function getSingleStock(req, res, next) {
     var stockID = parseInt(req.params.id);
-    db.one('select * from stock where id = $1', stockID)
+    db.one('select * from stocks where id = $1', stockID)
         .then(function(data) {
             res.status(200)
                 .json({
@@ -46,31 +46,31 @@ function createStock(req, res, next) {
     var datesArray = []
     var volumesArray = []
     xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', '.lm', [{
-        date: ''
+        dates: ''
     }])(function(err, data) {
         for (i = 1; i < 31; i++) {
-            var date = data[i].date;
-            var date = date.replace("\n", '');
-            datesArray.push(date);
+            var dates = data[i].dates;
+            var dates = dates.replace("\n", '');
+            datesArray.push(dates);
         }
     });
     xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', '.rgt.rm', [{
-        volume: ''
+        volumes: ''
     }])(function(err, data) {
         for (i = 1; i < 31; i++) {
-            var volume = data[i].volume;
-            var volume = volume.replace("\n", '');
-            var volume = volume.replace(/,/g, '');
-            volumesArray.push(parseInt(volume));
+            var volumes = data[i].volumes;
+            var volumes = volumes.replace("\n", '');
+            var volumes= volumes.replace(/,/g, '');
+            volumesArray.push(parseInt(volumes));
         }
     });
     xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', 'title')(function(err, name) {
         name = name.split(':');
         req.body.name = name[0];
-        req.body.date = datesArray;
-        req.body.volume = volumesArray;
-        db.none('insert into stock(date, name, index, symbol, volume)' +
-                'values(${date}::text[], ${name}, ${index}, ${symbol}, ${volume}::integer[])',
+        req.body.dates = datesArray;
+        req.body.volumes = volumesArray;
+        db.none('insert into stocks(dates, name, index, symbol, volumes)' +
+                'values(${dates}::text[], ${name}, ${index}, ${symbol}, ${volumes}::integer[])',
                 req.body)
             .then(function() {
                 res.status(200)
@@ -89,31 +89,31 @@ function updateStock(req, res, next) {
     var datesArray = []
     var volumesArray = []
     xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', '.lm', [{
-        date: ''
+        dates: ''
     }])(function(err, data) {
         for (i = 1; i < 31; i++) {
-            var date = data[i].date;
-            var date = date.replace("\n", '');
-            datesArray.push(date);
+            var dates = data[i].dates;
+            var dates = dates.replace("\n", '');
+            datesArray.push(dates);
         }
     });
     xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', '.rgt.rm', [{
-        volume: ''
+        volumes: ''
     }])(function(err, data) {
         for (i = 1; i < 31; i++) {
-            var volume = data[i].volume;
-            var volume = volume.replace("\n", '');
-            var volume = volume.replace(/,/g, '');
-            volumesArray.push(parseInt(volume));
+            var volumes = data[i].volumes;
+            var volumes = volumes.replace("\n", '');
+            var volumes = volumes.replace(/,/g, '');
+            volumesArray.push(parseInt(volumes));
         }
     });
     xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', 'title')(function(err, name) {
         name = name.split(':');
         req.body.name = name[0];
-        req.body.date = datesArray;
-        req.body.volume = volumesArray;
-        db.none('update stock set date=$1::text[], name=$2, index=$3, symbol=$4, volume=$5::integer[] where id=$6', [req.body.date, req.body.name, req.body.index,
-                req.body.symbol, req.body.volume, parseInt(req.params.id)
+        req.body.dates = datesArray;
+        req.body.volumes = volumesArray;
+        db.none('update stocks set dates=$1::text[], name=$2, index=$3, symbol=$4, volumes=$5::integer[] where id=$6', [req.body.dates, req.body.name, req.body.index,
+                req.body.symbol, req.body.volumes, parseInt(req.params.id)
             ])
             .then(function() {
                 res.status(200)
@@ -130,7 +130,7 @@ function updateStock(req, res, next) {
 
 function removeStock(req, res, next) {
     var stockID = parseInt(req.params.id);
-    db.result('delete from stock where id = $1', stockID)
+    db.result('delete from stocks where id = $1', stockID)
         .then(function(result) {
             res.status(200)
                 .json({
