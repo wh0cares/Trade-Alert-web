@@ -60,7 +60,7 @@ function createStock(req, res, next) {
         for (i = 1; i < 31; i++) {
             var volumes = data[i].volumes;
             var volumes = volumes.replace("\n", '');
-            var volumes= volumes.replace(/,/g, '');
+            var volumes = volumes.replace(/,/g, '');
             volumesArray.push(parseInt(volumes));
         }
     });
@@ -143,11 +143,44 @@ function removeStock(req, res, next) {
         });
 }
 
+//TODO Dont create user if username and/or email is already in use
+function createUser(req, res, next) {
+    db.none('insert into users(username, password, email)' +
+            "values(${username}, crypt(${password}, gen_salt('md5')), ${email})",
+            req.body)
+        .then(function() {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    message: 'User registered'
+                });
+        })
+        .catch(function(err) {
+            return next(err);
+        });
+}
+
+function authenticateUser(req, res, next) {
+    db.one("SELECT ${username} FROM users WHERE ${username} = ${username} AND password = crypt(${password}, password)", req.body)
+        .then(function(data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'User logged in'
+                });
+        })
+        .catch(function(err) {
+            return next(err);
+        });
+}
 
 module.exports = {
     getAllStocks: getAllStocks,
     getSingleStock: getSingleStock,
     createStock: createStock,
     updateStock: updateStock,
-    removeStock: removeStock
+    removeStock: removeStock,
+    createUser: createUser,
+    authenticateUser: authenticateUser
 };

@@ -9,6 +9,8 @@ router.get('/api/stocks/:id', db.getSingleStock);
 router.post('/api/stocks', db.createStock);
 router.put('/api/stocks/:id', db.updateStock);
 router.delete('/api/stocks/:id', db.removeStock);
+router.post('/api/users/register', db.createUser);
+router.post('/api/users/login', db.authenticateUser);
 
 
 module.exports = router;
