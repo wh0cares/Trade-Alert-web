@@ -143,25 +143,43 @@ function removeStock(req, res, next) {
         });
 }
 
-//TODO Dont create user if username and/or email is already in use
 function createUser(req, res, next) {
-    db.none('insert into users(username, password, email)' +
-            "values(${username}, crypt(${password}, gen_salt('md5')), ${email})",
-            req.body)
-        .then(function() {
-            res.status(200)
+    db.one("SELECT username FROM users WHERE username = ${username}", req.body)
+        .then(function(data) {
+            res.status(422)
                 .json({
-                    status: 'success',
-                    message: 'User registered'
+                    status: 'error',
+                    message: 'Username in use'
                 });
         })
         .catch(function(err) {
-            return next(err);
+            db.one("SELECT email FROM users WHERE email = ${email}", req.body)
+                .then(function(data) {
+                    res.status(422)
+                        .json({
+                            status: 'error',
+                            message: 'Email in use'
+                        });
+                })
+                .catch(function(err) {
+                    db.none('insert into users(username, password, email)' + "values(${username}, crypt(${password}, gen_salt('md5')), ${email})", req.body)
+                        .then(function() {
+                            res.status(200)
+                                .json({
+                                    status: 'success',
+                                    message: 'User registered'
+                                });
+                        })
+                        .catch(function(err) {
+                            return next(err);
+                        });
+
+                });
         });
 }
 
 function authenticateUser(req, res, next) {
-    db.one("SELECT ${username} FROM users WHERE ${username} = ${username} AND password = crypt(${password}, password)", req.body)
+    db.one("SELECT username, email FROM users WHERE username = ${username} AND password = crypt(${password}, password)", req.body)
         .then(function(data) {
             res.status(200)
                 .json({
