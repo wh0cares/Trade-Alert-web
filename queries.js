@@ -175,6 +175,30 @@ function authenticateUser(req, res, next) {
         });
 }
 
+function getStockVolume(req, res, next) {
+    var stockID = parseInt(req.params.id);
+    db.one('select name, symbol, index from stocks where id = $1', stockID)
+        .then(function(data) {
+            if (data["index"] === "NASDAQ") {
+                url = 'http://www.nasdaq.com/symbol/' + data["symbol"];
+                volume_id = '#' + data["symbol"] + '_Volume';
+            }
+            xray(url, volume_id)(function(err, volume) {
+                var volume = volume.replace(/,/g, '');
+                var volume = parseInt(volume);
+                res.status(200)
+                    .json({
+                        status: 'success',
+                        volume: volume,
+                        message: 'Retrieved ' + data["name"] + ' volume'
+                    })
+            });
+        })
+        .catch(function(err) {
+            return next(err);
+        });
+}
+
 module.exports = {
     getAllStocks: getAllStocks,
     getSingleStock: getSingleStock,
@@ -182,5 +206,6 @@ module.exports = {
     updateStock: updateStock,
     removeStock: removeStock,
     createUser: createUser,
-    authenticateUser: authenticateUser
+    authenticateUser: authenticateUser,
+    getStockVolume: getStockVolume
 };
