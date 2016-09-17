@@ -12,6 +12,6 @@ router.put('/api/stocks/:id', db.updateStock);
 router.post('/api/users/register', db.createUser);
 router.post('/api/users/login', db.authenticateUser);
 router.get('/api/stocks/:id/volume', db.getStockVolume);
-
+router.get('/api/users/stocks', db.getAllUserStocks);
 
 module.exports = router;
