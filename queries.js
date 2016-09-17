@@ -95,56 +95,59 @@ function createStock(req, res, next) {
             } else {
                 var datesArray = []
                 var volumesArray = []
-                xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', '.lm', [{
-                    dates: ''
-                }])(function(err, data) {
-                    for (i = 1; i < 31; i++) {
-                        var dates = data[i].dates;
-                        var dates = dates.replace("\n", '');
-                        datesArray.push(dates);
-                    }
-                });
-                xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', '.rgt.rm', [{
-                    volumes: ''
-                }])(function(err, data) {
-                    for (i = 1; i < 31; i++) {
-                        var volumes = data[i].volumes;
-                        var volumes = volumes.replace("\n", '');
-                        var volumes = volumes.replace(/,/g, '');
-                        volumesArray.push(parseInt(volumes));
-                    }
-                });
-                xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', 'title')(function(err, name) {
-                    name = name.split(':');
-                    req.body.name = name[0];
-                    req.body.dates = datesArray;
-                    req.body.volumes = volumesArray;
+                xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', "body@html")(function(err, data) {
+                    html = data
+                    xray(html, '.lm', [{
+                        dates: ''
+                    }])(function(err, data) {
+                        for (i = 1; i < 31; i++) {
+                            var dates = data[i].dates;
+                            var dates = dates.replace("\n", '');
+                            datesArray.push(dates);
+                        }
+                    });
+                    xray(html, '.rgt.rm', [{
+                        volumes: ''
+                    }])(function(err, data) {
+                        for (i = 1; i < 31; i++) {
+                            var volumes = data[i].volumes;
+                            var volumes = volumes.replace("\n", '');
+                            var volumes = volumes.replace(/,/g, '');
+                            volumesArray.push(parseInt(volumes));
+                        }
+                    });
+                    xray(html, 'title')(function(err, name) {
+                        name = name.split(':');
+                        req.body.name = name[0];
+                        req.body.dates = datesArray;
+                        req.body.volumes = volumesArray;
 
-                    db.one("SELECT id FROM users WHERE access_token = $1", token)
-                        .then(function(data) {
-                            u_id = data["id"];
-                            db.one('insert into stocks(dates, name, index, symbol, volumes) values(${dates}::text[], ${name}, ${index}, ${symbol}, ${volumes}::integer[]) returning id', req.body)
-                                .then(function(data) {
-                                    s_id = data["id"];
-                                    db.none('insert into users_stocks(user_id, stock_id) values($1, $2)', [u_id, s_id])
-                                        .then(function() {
-                                            res.status(200)
-                                                .json({
-                                                    status: 'success',
-                                                    message: 'Inserted stock'
-                                                });
-                                        })
-                                        .catch(function(err) {
-                                            return next(err);
-                                        });
-                                })
-                                .catch(function(err) {
-                                    return next(err);
-                                });
-                        })
-                        .catch(function(err) {
-                            return next(err);
-                        });
+                        db.one("SELECT id FROM users WHERE access_token = $1", token)
+                            .then(function(data) {
+                                u_id = data["id"];
+                                db.one('insert into stocks(dates, name, index, symbol, volumes) values(${dates}::text[], ${name}, ${index}, ${symbol}, ${volumes}::integer[]) returning id', req.body)
+                                    .then(function(data) {
+                                        s_id = data["id"];
+                                        db.none('insert into users_stocks(user_id, stock_id) values($1, $2)', [u_id, s_id])
+                                            .then(function() {
+                                                res.status(200)
+                                                    .json({
+                                                        status: 'success',
+                                                        message: 'Inserted stock'
+                                                    });
+                                            })
+                                            .catch(function(err) {
+                                                return next(err);
+                                            });
+                                    })
+                                    .catch(function(err) {
+                                        return next(err);
+                                    });
+                            })
+                            .catch(function(err) {
+                                return next(err);
+                            });
+                    });
                 });
             }
         });
@@ -170,43 +173,46 @@ function updateStock(req, res, next) {
             } else {
                 var datesArray = []
                 var volumesArray = []
-                xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', '.lm', [{
-                    dates: ''
-                }])(function(err, data) {
-                    for (i = 1; i < 31; i++) {
-                        var dates = data[i].dates;
-                        var dates = dates.replace("\n", '');
-                        datesArray.push(dates);
-                    }
-                });
-                xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', '.rgt.rm', [{
-                    volumes: ''
-                }])(function(err, data) {
-                    for (i = 1; i < 31; i++) {
-                        var volumes = data[i].volumes;
-                        var volumes = volumes.replace("\n", '');
-                        var volumes = volumes.replace(/,/g, '');
-                        volumesArray.push(parseInt(volumes));
-                    }
-                });
-                xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', 'title')(function(err, name) {
-                    name = name.split(':');
-                    req.body.name = name[0];
-                    req.body.dates = datesArray;
-                    req.body.volumes = volumesArray;
-                    db.none('update stocks set dates=$1::text[], name=$2, index=$3, symbol=$4, volumes=$5::integer[] where id=$6', [req.body.dates, req.body.name, req.body.index,
-                            req.body.symbol, req.body.volumes, parseInt(req.params.id)
-                        ])
-                        .then(function() {
-                            res.status(200)
-                                .json({
-                                    status: 'success',
-                                    message: 'Updated stock'
-                                });
-                        })
-                        .catch(function(err) {
-                            return next(err);
-                        });
+                xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', "body@html")(function(err, data) {
+                    html = data
+                    xray(html, '.lm', [{
+                        dates: ''
+                    }])(function(err, data) {
+                        for (i = 1; i < 31; i++) {
+                            var dates = data[i].dates;
+                            var dates = dates.replace("\n", '');
+                            datesArray.push(dates);
+                        }
+                    });
+                    xray(html, '.rgt.rm', [{
+                        volumes: ''
+                    }])(function(err, data) {
+                        for (i = 1; i < 31; i++) {
+                            var volumes = data[i].volumes;
+                            var volumes = volumes.replace("\n", '');
+                            var volumes = volumes.replace(/,/g, '');
+                            volumesArray.push(parseInt(volumes));
+                        }
+                    });
+                    xray(html, 'title')(function(err, name) {
+                        name = name.split(':');
+                        req.body.name = name[0];
+                        req.body.dates = datesArray;
+                        req.body.volumes = volumesArray;
+                        db.none('update stocks set dates=$1::text[], name=$2, index=$3, symbol=$4, volumes=$5::integer[] where id=$6', [req.body.dates, req.body.name, req.body.index,
+                                req.body.symbol, req.body.volumes, parseInt(req.params.id)
+                            ])
+                            .then(function() {
+                                res.status(200)
+                                    .json({
+                                        status: 'success',
+                                        message: 'Updated stock'
+                                    });
+                            })
+                            .catch(function(err) {
+                                return next(err);
+                            });
+                    });
                 });
             }
         });
