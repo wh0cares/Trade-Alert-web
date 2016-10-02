@@ -5,7 +5,7 @@ var db = require('../queries');
 
 
 router.get('/api/stocks', db.getAllStocks);
-router.get('/api/stocks/:id', db.getSingleStock);
+router.get('/api/stocks/:symbol', db.getSingleStock);
 router.post('/api/stocks', db.createStock);
 router.put('/api/stocks/:id', db.updateStock);
 //router.delete('/api/stocks/:id', db.removeStock);

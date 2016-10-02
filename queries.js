@@ -58,8 +58,7 @@ function getSingleStock(req, res, next) {
                         message: 'Unauthorized'
                     });
             } else {
-                var stockID = parseInt(req.params.id);
-                db.one('select * from stocks where id = $1', stockID)
+                db.one('select * from stocks where symbol = $1', req.params.symbol)
                     .then(function(data) {
                         res.status(200)
                             .json({
@@ -83,6 +82,8 @@ function getSingleStock(req, res, next) {
 }
 
 function createStock(req, res, next) {
+    //TODO Dont create if stock exists in database
+    //TODO Fix name
     var token = req.headers['x-access-token'];
     if (token) {
         jwt.verify(token, 'testsecret', function(err, decoded) {
