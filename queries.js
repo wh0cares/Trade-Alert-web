@@ -83,7 +83,6 @@ function getSingleStock(req, res, next) {
 
 function createStock(req, res, next) {
     //TODO Dont create if stock exists in database
-    //TODO Fix name
     var token = req.headers['x-access-token'];
     if (token) {
         jwt.verify(token, 'testsecret', function(err, decoded) {
@@ -117,9 +116,9 @@ function createStock(req, res, next) {
                             volumesArray.push(parseInt(volumes));
                         }
                     });
-                    xray(html, 'title')(function(err, name) {
-                        name = name.split(':');
-                        req.body.name = name[0];
+                    xray(html, '.g-section.hdg.top.appbar-hide>h3')(function(err, name) {
+                        name = name.replace(' historical prices\n', '');
+                        req.body.name = name;
                         req.body.dates = datesArray;
                         req.body.volumes = volumesArray;
 
@@ -195,9 +194,9 @@ function updateStock(req, res, next) {
                             volumesArray.push(parseInt(volumes));
                         }
                     });
-                    xray(html, 'title')(function(err, name) {
-                        name = name.split(':');
-                        req.body.name = name[0];
+                    xray(html, '.g-section.hdg.top.appbar-hide>h3')(function(err, name) {
+                        name = name.replace(' historical prices\n', '');
+                        req.body.name = name;
                         req.body.dates = datesArray;
                         req.body.volumes = volumesArray;
                         db.none('update stocks set dates=$1::text[], name=$2, index=$3, symbol=$4, volumes=$5::integer[] where id=$6', [req.body.dates, req.body.name, req.body.index,
