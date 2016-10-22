@@ -225,19 +225,39 @@ function updateStock(req, res, next) {
     }
 }
 
-function removeStock(req, res, next) {
-    var stockID = parseInt(req.params.id);
-    db.result('delete from stocks where id = $1', stockID)
-        .then(function(result) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: `Removed ${result.rowCount} stock`
-                });
-        })
-        .catch(function(err) {
-            return next(err);
+function removeUserStock(req, res, next) {
+    var token = req.headers['x-access-token'];
+    if (token) {
+        jwt.verify(token, 'testsecret', function(err, decoded) {
+            if (err) {
+                res.status(401)
+                    .json({
+                        status: 'error',
+                        message: 'Unauthorized'
+                    });
+            } else {
+                db.one("SELECT id FROM users WHERE access_token = $1", token)
+                    .then(function(data) {
+                        var userID = data["id"];
+                        var stockID = parseInt(req.params.id);
+                        db.none('delete from users_stocks where user_id = $1 AND stock_id = $2', [userID, stockID])
+                            .then(function(result) {
+                                res.status(200)
+                                    .json({
+                                        status: 'success',
+                                        message: `Removed stock`
+                                    });
+                            });
+                    });
+            }
         });
+    } else {
+        res.status(403)
+            .json({
+                status: 'error',
+                message: 'No token provided'
+            });
+    }
 }
 
 function createUser(req, res, next) {
@@ -382,9 +402,9 @@ module.exports = {
     getSingleStock: getSingleStock,
     createStock: createStock,
     updateStock: updateStock,
-    //removeStock: removeStock,
     createUser: createUser,
     authenticateUser: authenticateUser,
     getStockVolume: getStockVolume,
-    getAllUserStocks: getAllUserStocks
+    getAllUserStocks: getAllUserStocks,
+    removeUserStock: removeUserStock
 };
