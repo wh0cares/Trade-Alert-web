@@ -336,6 +336,62 @@ function getStockRealtime(req, res, next) {
                     .then(function(data) {
                         if (data["index"] === "NASDAQ") {
                             url = 'http://www.nasdaq.com/symbol/' + data["symbol"];
+                        }
+                        xray(url, '#quotes_content_left_InfoQuotesResults > tr > td > .genTable.thin > table > tbody', {
+                            open: 'tr:nth-child(17) > td:nth-child(2)',
+                            prevClose: 'tr:nth-child(6) > td:nth-child(2)',
+                            volume: 'tr:nth-child(4) > td:nth-child(2)',
+                            avgVolume50Day: 'tr:nth-child(5) > td:nth-child(2)',
+                            marketCap: 'tr:nth-child(8) > td:nth-child(2)',
+                            peRatio: 'tr:nth-child(9) > td:nth-child(2)',
+                            eps: 'tr:nth-child(11) > td:nth-child(2)',
+                            currentYield: 'tr:nth-child(15) > td:nth-child(2)',
+                        })(function(err, obj) {
+                            obj.open = obj.open.replace(/\s+/g, '').replace('$', '');
+                            obj.prevClose = obj.prevClose.replace(/\s+/g, '').replace('$', '');
+                            obj.volume = obj.volume.replace(/,/g, '').replace(/(\r\n|\n|\r)/gm, '').replace(/\s+/g, '');
+                            obj.avgVolume50Day = obj.avgVolume50Day.replace(/,/g, '');
+                            obj.marketCap = obj.marketCap.replace(/,/g, '').replace(/\s+/g, '').replace('$', '');
+                            obj.eps = obj.eps.replace(/\s+/g, '').replace('$', '');
+                            obj.currentYield = obj.currentYield.replace(/\s+/g, '');
+                            res.status(200)
+                                .json({
+                                    status: 'success',
+                                    data: [obj],
+                                    message: 'Retrieved ' + data["name"] + ' realtime data'
+                                })
+                        })
+                    })
+                    .catch(function(err) {
+                        return next(err);
+                    });
+            }
+        });
+    } else {
+        res.status(403)
+            .json({
+                status: 'error',
+                message: 'No token provided'
+            });
+    }
+}
+
+function getStockRealtimeVolume(req, res, next) {
+    var token = req.headers['x-access-token'];
+    if (token) {
+        jwt.verify(token, 'testsecret', function(err, decoded) {
+            if (err) {
+                res.status(401)
+                    .json({
+                        status: 'error',
+                        message: 'Unauthorized'
+                    });
+            } else {
+                var stockID = parseInt(req.params.id);
+                db.one('select name, symbol, index from stocks where id = $1', stockID)
+                    .then(function(data) {
+                        if (data["index"] === "NASDAQ") {
+                            url = 'http://www.nasdaq.com/symbol/' + data["symbol"];
                             volume_id = '#' + data["symbol"] + '_Volume';
                         }
                         xray(url, volume_id)(function(err, volume) {
@@ -345,7 +401,7 @@ function getStockRealtime(req, res, next) {
                                 .json({
                                     status: 'success',
                                     volume: volume,
-                                    message: 'Retrieved ' + data["name"] + ' volume'
+                                    message: 'Retrieved ' + data["name"] + ' realtime volume'
                                 })
                         });
                     })
@@ -459,6 +515,7 @@ module.exports = {
     createStock: createStock,
     updateStock: updateStock,
     getStockRealtime: getStockRealtime,
+    getStockRealtimeVolume: getStockRealtimeVolume,
     createUser: createUser,
     authenticateUser: authenticateUser,
     getUserPortfolio: getUserPortfolio,

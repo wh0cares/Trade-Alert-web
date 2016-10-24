@@ -9,6 +9,7 @@ router.get('/api/stocks/:symbol', db.getSingleStock);
 router.post('/api/stocks', db.createStock);
 router.put('/api/stocks/:id', db.updateStock);
 router.get('/api/stocks/:id/realtime', db.getStockRealtime);
+router.get('/api/stocks/:id/volume', db.getStockRealtimeVolume);
 
 router.post('/api/users/register', db.createUser);
 router.post('/api/users/login', db.authenticateUser);
