@@ -248,14 +248,20 @@ function removeFromPortfolio(req, res, next) {
                 db.one("SELECT id FROM users WHERE access_token = $1", token)
                     .then(function(data) {
                         var userID = data["id"];
-                        var stockID = parseInt(req.params.id);
-                        db.none('delete from users_stocks where user_id = $1 AND stock_id = $2', [userID, stockID])
-                            .then(function(result) {
-                                res.status(200)
-                                    .json({
-                                        status: 'success',
-                                        message: `Removed stock`
+                        db.one('select id from stocks where symbol = $1', req.params.symbol)
+                            .then(function(data) {
+                                var stockID = data["id"];
+                                db.none('delete from users_stocks where user_id = $1 AND stock_id = $2', [userID, stockID])
+                                    .then(function(result) {
+                                        res.status(200)
+                                            .json({
+                                                status: 'success',
+                                                message: `Removed stock`
+                                            });
                                     });
+                            })
+                            .catch(function(err) {
+                                return next(err);
                             });
                     });
             }
@@ -331,39 +337,34 @@ function getStockRealtime(req, res, next) {
                         message: 'Unauthorized'
                     });
             } else {
-                db.one('select name, index from stocks where symbol = $1', req.params.symbol)
-                    .then(function(data) {
-                        if (data["index"] === "NASDAQ") {
-                            url = 'http://www.nasdaq.com/symbol/' + req.params.symbol;
-                        }
-                        xray(url, '#quotes_content_left_InfoQuotesResults > tr > td > .genTable.thin > table > tbody', {
-                            open: 'tr:nth-child(17) > td:nth-child(2)',
-                            prevClose: 'tr:nth-child(6) > td:nth-child(2)',
-                            volume: 'tr:nth-child(4) > td:nth-child(2)',
-                            avgVolume50Day: 'tr:nth-child(5) > td:nth-child(2)',
-                            marketCap: 'tr:nth-child(8) > td:nth-child(2)',
-                            peRatio: 'tr:nth-child(9) > td:nth-child(2)',
-                            eps: 'tr:nth-child(11) > td:nth-child(2)',
-                            currentYield: 'tr:nth-child(15) > td:nth-child(2)',
-                        })(function(err, obj) {
-                            obj.open = obj.open.replace(/\s+/g, '').replace('$', '');
-                            obj.prevClose = obj.prevClose.replace(/\s+/g, '').replace('$', '');
-                            obj.volume = obj.volume.replace(/,/g, '').replace(/(\r\n|\n|\r)/gm, '').replace(/\s+/g, '');
-                            obj.avgVolume50Day = obj.avgVolume50Day.replace(/,/g, '');
-                            obj.marketCap = obj.marketCap.replace(/,/g, '').replace(/\s+/g, '').replace('$', '');
-                            obj.eps = obj.eps.replace(/\s+/g, '').replace('$', '');
-                            obj.currentYield = obj.currentYield.replace(/\s+/g, '');
-                            res.status(200)
-                                .json({
-                                    status: 'success',
-                                    data: [obj],
-                                    message: 'Retrieved ' + data["name"] + ' realtime data'
-                                })
+                if (req.params.index === "NASDAQ") {
+                    url = 'http://www.nasdaq.com/symbol/' + req.params.symbol;
+                }
+                xray(url, '#quotes_content_left_InfoQuotesResults > tr > td > .genTable.thin > table > tbody', {
+                    open: 'tr:nth-child(17) > td:nth-child(2)',
+                    prevClose: 'tr:nth-child(6) > td:nth-child(2)',
+                    volume: 'tr:nth-child(4) > td:nth-child(2)',
+                    avgVolume50Day: 'tr:nth-child(5) > td:nth-child(2)',
+                    marketCap: 'tr:nth-child(8) > td:nth-child(2)',
+                    peRatio: 'tr:nth-child(9) > td:nth-child(2)',
+                    eps: 'tr:nth-child(11) > td:nth-child(2)',
+                    currentYield: 'tr:nth-child(15) > td:nth-child(2)',
+                })(function(err, obj) {
+                    obj.open = obj.open.replace(/\s+/g, '').replace('$', '');
+                    obj.prevClose = obj.prevClose.replace(/\s+/g, '').replace('$', '');
+                    obj.volume = obj.volume.replace(/,/g, '').replace(/(\r\n|\n|\r)/gm, '').replace(/\s+/g, '');
+                    obj.avgVolume50Day = obj.avgVolume50Day.replace(/,/g, '');
+                    obj.marketCap = obj.marketCap.replace(/,/g, '').replace(/\s+/g, '').replace('$', '');
+                    obj.eps = obj.eps.replace(/\s+/g, '').replace('$', '');
+                    obj.currentYield = obj.currentYield.replace(/\s+/g, '');
+                    res.status(200)
+                        .json({
+                            status: 'success',
+                            data: [obj],
+                            message: 'Retrieved ' + data["name"] + ' realtime data'
                         })
-                    })
-                    .catch(function(err) {
-                        return next(err);
-                    });
+                })
+
             }
         });
     } else {
@@ -473,27 +474,33 @@ function addToPortfolio(req, res, next) {
                 db.one("SELECT id FROM users WHERE access_token = $1", token)
                     .then(function(data) {
                         var userID = data["id"];
-                        var stockID = parseInt(req.params.id);
-                        db.one("SELECT user_id, stock_id FROM users_stocks WHERE user_id = $1 AND stock_id = $2", [userID, stockID])
+                        db.one('select id from stocks where symbol = $1', req.params.symbol)
                             .then(function(data) {
-                                res.status(422)
-                                    .json({
-                                        status: 'error',
-                                        message: 'Stock already in portfolio'
-                                    });
-                            })
-                            .catch(function(err) {
-                                db.none('insert into users_stocks(user_id, stock_id) values($1, $2)', [userID, stockID])
-                                    .then(function() {
-                                        res.status(200)
+                                var stockID = data["id"];
+                                db.one("SELECT user_id, stock_id FROM users_stocks WHERE user_id = $1 AND stock_id = $2", [userID, stockID])
+                                    .then(function(data) {
+                                        res.status(422)
                                             .json({
-                                                status: 'success',
-                                                message: 'Added stock to porfolio'
+                                                status: 'error',
+                                                message: 'Stock already in portfolio'
                                             });
                                     })
                                     .catch(function(err) {
-                                        return next(err);
+                                        db.none('insert into users_stocks(user_id, stock_id) values($1, $2)', [userID, stockID])
+                                            .then(function() {
+                                                res.status(200)
+                                                    .json({
+                                                        status: 'success',
+                                                        message: 'Added stock to porfolio'
+                                                    });
+                                            })
+                                            .catch(function(err) {
+                                                return next(err);
+                                            });
                                     });
+                            })
+                            .catch(function(err) {
+                                return next(err);
                             });
                     });
             }
