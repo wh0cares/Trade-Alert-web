@@ -234,7 +234,7 @@ function updateStock(req, res, next) {
     }
 }
 
-function removeUserStock(req, res, next) {
+function removeFromPortfolio(req, res, next) {
     var token = req.headers['x-access-token'];
     if (token) {
         jwt.verify(token, 'testsecret', function(err, decoded) {
@@ -320,7 +320,7 @@ function authenticateUser(req, res, next) {
         });
 }
 
-function getStockVolume(req, res, next) {
+function getStockRealtime(req, res, next) {
     var token = req.headers['x-access-token'];
     if (token) {
         jwt.verify(token, 'testsecret', function(err, decoded) {
@@ -363,7 +363,7 @@ function getStockVolume(req, res, next) {
     }
 }
 
-function getAllUserStocks(req, res, next) {
+function getUserPortfolio(req, res, next) {
     var token = req.headers['x-access-token'];
     if (token) {
         jwt.verify(token, 'testsecret', function(err, decoded) {
@@ -405,15 +405,63 @@ function getAllUserStocks(req, res, next) {
     }
 }
 
+function addToPortfolio(req, res, next) {
+    var token = req.headers['x-access-token'];
+    if (token) {
+        jwt.verify(token, 'testsecret', function(err, decoded) {
+            if (err) {
+                res.status(401)
+                    .json({
+                        status: 'error',
+                        message: 'Unauthorized'
+                    });
+            } else {
+                db.one("SELECT id FROM users WHERE access_token = $1", token)
+                    .then(function(data) {
+                        var userID = data["id"];
+                        var stockID = parseInt(req.params.id);
+                        db.one("SELECT user_id, stock_id FROM users_stocks WHERE user_id = $1 AND stock_id = $2", [userID, stockID])
+                            .then(function(data) {
+                                res.status(422)
+                                    .json({
+                                        status: 'error',
+                                        message: 'Stock already in portfolio'
+                                    });
+                            })
+                            .catch(function(err) {
+                                db.none('insert into users_stocks(user_id, stock_id) values($1, $2)', [userID, stockID])
+                                    .then(function() {
+                                        res.status(200)
+                                            .json({
+                                                status: 'success',
+                                                message: 'Added stock to porfolio'
+                                            });
+                                    })
+                                    .catch(function(err) {
+                                        return next(err);
+                                    });
+                            });
+                    });
+            }
+        });
+    } else {
+        res.status(403)
+            .json({
+                status: 'error',
+                message: 'No token provided'
+            });
+    }
+}
 
 module.exports = {
     getAllStocks: getAllStocks,
     getSingleStock: getSingleStock,
     createStock: createStock,
     updateStock: updateStock,
+    getStockRealtime: getStockRealtime,
     createUser: createUser,
     authenticateUser: authenticateUser,
-    getStockVolume: getStockVolume,
-    getAllUserStocks: getAllUserStocks,
-    removeUserStock: removeUserStock
+    getUserPortfolio: getUserPortfolio,
+    removeFromPortfolio: removeFromPortfolio,
+    addToPortfolio: addToPortfolio
 };
