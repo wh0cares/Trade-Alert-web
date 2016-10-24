@@ -82,7 +82,6 @@ function getSingleStock(req, res, next) {
 }
 
 function createStock(req, res, next) {
-    //TODO Dont create if stock exists in database
     var token = req.headers['x-access-token'];
     if (token) {
         jwt.verify(token, 'testsecret', function(err, decoded) {
@@ -93,47 +92,60 @@ function createStock(req, res, next) {
                         message: 'Unauthorized'
                     });
             } else {
-                var datesArray = []
-                var volumesArray = []
-                xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', "body@html")(function(err, data) {
-                    html = data
-                    xray(html, '.lm', [{
-                        dates: ''
-                    }])(function(err, data) {
-                        for (i = 1; i < 31; i++) {
-                            var dates = data[i].dates;
-                            var dates = dates.replace("\n", '');
-                            datesArray.push(dates);
-                        }
-                    });
-                    xray(html, '.rgt.rm', [{
-                        volumes: ''
-                    }])(function(err, data) {
-                        for (i = 1; i < 31; i++) {
-                            var volumes = data[i].volumes;
-                            var volumes = volumes.replace("\n", '');
-                            var volumes = volumes.replace(/,/g, '');
-                            volumesArray.push(parseInt(volumes));
-                        }
-                    });
-                    xray(html, '.g-section.hdg.top.appbar-hide>h3')(function(err, name) {
-                        name = name.replace(' historical prices\n', '');
-                        req.body.name = name;
-                        req.body.dates = datesArray;
-                        req.body.volumes = volumesArray;
+                db.one("SELECT symbol FROM stocks WHERE symbol = ${symbol}", req.body)
+                    .then(function(data) {
+                        res.status(422)
+                            .json({
+                                status: 'error',
+                                message: 'Stock already in database'
+                            });
+                    })
+                    .catch(function(err) {
+                        var datesArray = []
+                        var volumesArray = []
+                        xray('https://www.google.com/finance/historical?q=NASDAQ%3A' + req.body.symbol + '&ei=DqXVV_HpForIeYf-tOgD&num=30', "body@html")(function(err, data) {
+                            html = data
+                            xray(html, '.lm', [{
+                                dates: ''
+                            }])(function(err, data) {
+                                for (i = 1; i < 31; i++) {
+                                    var dates = data[i].dates;
+                                    var dates = dates.replace("\n", '');
+                                    datesArray.push(dates);
+                                }
+                            });
+                            xray(html, '.rgt.rm', [{
+                                volumes: ''
+                            }])(function(err, data) {
+                                for (i = 1; i < 31; i++) {
+                                    var volumes = data[i].volumes;
+                                    var volumes = volumes.replace("\n", '');
+                                    var volumes = volumes.replace(/,/g, '');
+                                    volumesArray.push(parseInt(volumes));
+                                }
+                            });
+                            xray(html, '.g-section.hdg.top.appbar-hide>h3')(function(err, name) {
+                                name = name.replace(' historical prices\n', '');
+                                req.body.name = name;
+                                req.body.dates = datesArray;
+                                req.body.volumes = volumesArray;
 
-                        db.one("SELECT id FROM users WHERE access_token = $1", token)
-                            .then(function(data) {
-                                u_id = data["id"];
-                                db.one('insert into stocks(dates, name, index, symbol, volumes) values(${dates}::text[], ${name}, ${index}, ${symbol}, ${volumes}::integer[]) returning id', req.body)
+                                db.one("SELECT id FROM users WHERE access_token = $1", token)
                                     .then(function(data) {
-                                        s_id = data["id"];
-                                        db.none('insert into users_stocks(user_id, stock_id) values($1, $2)', [u_id, s_id])
-                                            .then(function() {
-                                                res.status(200)
-                                                    .json({
-                                                        status: 'success',
-                                                        message: 'Inserted stock'
+                                        u_id = data["id"];
+                                        db.one('insert into stocks(dates, name, index, symbol, volumes) values(${dates}::text[], ${name}, ${index}, ${symbol}, ${volumes}::integer[]) returning id', req.body)
+                                            .then(function(data) {
+                                                s_id = data["id"];
+                                                db.none('insert into users_stocks(user_id, stock_id) values($1, $2)', [u_id, s_id])
+                                                    .then(function() {
+                                                        res.status(200)
+                                                            .json({
+                                                                status: 'success',
+                                                                message: 'Inserted stock'
+                                                            });
+                                                    })
+                                                    .catch(function(err) {
+                                                        return next(err);
                                                     });
                                             })
                                             .catch(function(err) {
@@ -143,12 +155,9 @@ function createStock(req, res, next) {
                                     .catch(function(err) {
                                         return next(err);
                                     });
-                            })
-                            .catch(function(err) {
-                                return next(err);
                             });
+                        });
                     });
-                });
             }
         });
     } else {
