@@ -331,11 +331,10 @@ function getStockRealtime(req, res, next) {
                         message: 'Unauthorized'
                     });
             } else {
-                var stockID = parseInt(req.params.id);
-                db.one('select name, symbol, index from stocks where id = $1', stockID)
+                db.one('select name, index from stocks where symbol = $1', req.params.symbol)
                     .then(function(data) {
                         if (data["index"] === "NASDAQ") {
-                            url = 'http://www.nasdaq.com/symbol/' + data["symbol"];
+                            url = 'http://www.nasdaq.com/symbol/' + req.params.symbol;
                         }
                         xray(url, '#quotes_content_left_InfoQuotesResults > tr > td > .genTable.thin > table > tbody', {
                             open: 'tr:nth-child(17) > td:nth-child(2)',
@@ -387,12 +386,11 @@ function getStockRealtimeVolume(req, res, next) {
                         message: 'Unauthorized'
                     });
             } else {
-                var stockID = parseInt(req.params.id);
-                db.one('select name, symbol, index from stocks where id = $1', stockID)
+                db.one('select name, index from stocks where symbol = $1', req.params.symbol)
                     .then(function(data) {
                         if (data["index"] === "NASDAQ") {
-                            url = 'http://www.nasdaq.com/symbol/' + data["symbol"];
-                            volume_id = '#' + data["symbol"] + '_Volume';
+                            url = 'http://www.nasdaq.com/symbol/' + req.params.symbol;
+                            volume_id = '#' + req.params.symbol + '_Volume';
                         }
                         xray(url, volume_id)(function(err, volume) {
                             var volume = volume.replace(/,/g, '');
