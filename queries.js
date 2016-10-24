@@ -337,7 +337,7 @@ function getStockRealtime(req, res, next) {
                         message: 'Unauthorized'
                     });
             } else {
-                if (req.params.index === "NASDAQ") {
+                if (req.params.index.toUpperCase() === "NASDAQ") {
                     url = 'http://www.nasdaq.com/symbol/' + req.params.symbol;
                 }
                 xray(url, '#quotes_content_left_InfoQuotesResults > tr > td > .genTable.thin > table > tbody', {
@@ -361,10 +361,9 @@ function getStockRealtime(req, res, next) {
                         .json({
                             status: 'success',
                             data: [obj],
-                            message: 'Retrieved ' + data["name"] + ' realtime data'
-                        })
-                })
-
+                            message: 'Retrieved ' + req.params.symbol.toUpperCase() + ' realtime data'
+                        });
+                });
             }
         });
     } else {
@@ -401,7 +400,7 @@ function getStockRealtimeVolume(req, res, next) {
                                     status: 'success',
                                     volume: volume,
                                     message: 'Retrieved ' + data["name"] + ' realtime volume'
-                                })
+                                });
                         });
                     })
                     .catch(function(err) {
