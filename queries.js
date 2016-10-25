@@ -134,26 +134,12 @@ function createStock(req, res, next) {
                                 req.body.dates = datesArray;
                                 req.body.volumes = volumesArray;
 
-                                db.one("SELECT id FROM users WHERE access_token = $1", token)
+                                db.one('insert into stocks(dates, name, index, symbol, volumes) values(${dates}::text[], ${name}, ${index}, ${symbol}, ${volumes}::integer[]) returning id', req.body)
                                     .then(function(data) {
-                                        u_id = data["id"];
-                                        db.one('insert into stocks(dates, name, index, symbol, volumes) values(${dates}::text[], ${name}, ${index}, ${symbol}, ${volumes}::integer[]) returning id', req.body)
-                                            .then(function(data) {
-                                                s_id = data["id"];
-                                                db.none('insert into users_stocks(user_id, stock_id) values($1, $2)', [u_id, s_id])
-                                                    .then(function() {
-                                                        res.status(200)
-                                                            .json({
-                                                                status: 'success',
-                                                                message: 'Inserted stock'
-                                                            });
-                                                    })
-                                                    .catch(function(err) {
-                                                        return next(err);
-                                                    });
-                                            })
-                                            .catch(function(err) {
-                                                return next(err);
+                                        res.status(200)
+                                            .json({
+                                                status: 'success',
+                                                message: 'Inserted stock'
                                             });
                                     })
                                     .catch(function(err) {
