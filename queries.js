@@ -68,7 +68,11 @@ function getSingleStock(req, res, next) {
                             });
                     })
                     .catch(function(err) {
-                        return next(err);
+                        res.status(404)
+                            .json({
+                                status: 'error',
+                                message: 'Stock not in database'
+                            });
                     });
             }
         });
