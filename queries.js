@@ -346,7 +346,7 @@ function getStockRealtime(req, res, next) {
                     obj.avgVolume50Day = obj.avgVolume50Day.replace(/,/g, '');
                     obj.marketCap = obj.marketCap.replace(/,/g, '').replace(/\s+/g, '').replace('$', '');
                     obj.eps = obj.eps.replace(/\s+/g, '').replace('$', '');
-                    obj.currentYield = obj.currentYield.replace(/\s+/g, '');
+                    obj.currentYield = obj.currentYield.replace(/\s+/g, '').replace('%','');
                     res.status(200)
                         .json({
                             status: 'success',
