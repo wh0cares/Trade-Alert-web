@@ -7,7 +7,7 @@ var db = require('../queries');
 router.get('/api/stocks', db.getAllStocks);
 router.get('/api/stocks/:symbol', db.getSingleStock);
 router.post('/api/stocks', db.createStock);
-router.put('/api/stocks/:id', db.updateStock);
+router.put('/api/stocks/:symbol', db.updateStock);
 router.get('/api/stocks/:symbol/:index/realtime', db.getStockRealtime);
 router.get('/api/stocks/:symbol/volume', db.getStockRealtimeVolume);
 

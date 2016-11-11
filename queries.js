@@ -198,8 +198,8 @@ function updateStock(req, res, next) {
                         req.body.name = name;
                         req.body.dates = datesArray;
                         req.body.volumes = volumesArray;
-                        db.none('update stocks set dates=$1::text[], name=$2, index=$3, symbol=$4, volumes=$5::integer[] where id=$6', [req.body.dates, req.body.name, req.body.index,
-                                req.body.symbol, req.body.volumes, parseInt(req.params.id)
+                        db.none('update stocks set dates=$1::text[], name=$2, index=$3, symbol=$4, volumes=$5::integer[] where symbol=$6', [req.body.dates, req.body.name, req.body.index,
+                                req.body.symbol, req.body.volumes, req.params.symbol
                             ])
                             .then(function() {
                                 res.status(200)
