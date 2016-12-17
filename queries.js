@@ -312,7 +312,11 @@ function authenticateUser(req, res, next) {
                 });
         })
         .catch(function(err) {
-            return next(err);
+            res.status(422)
+                .json({
+                    status: 'error',
+                    message: 'Invalid username or password'
+                });
         });
 }
 
