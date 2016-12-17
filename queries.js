@@ -302,7 +302,7 @@ function createUser(req, res, next) {
 }
 
 function authenticateUser(req, res, next) {
-    db.one("SELECT username, email, access_token FROM users WHERE username = ${username} AND password = crypt(${password}, password)", req.body)
+    db.one("SELECT username, email, access_token FROM users WHERE LOWER(username) = LOWER(${username}) AND password = crypt(${password}, password)", req.body)
         .then(function(data) {
             res.status(200)
                 .json({
